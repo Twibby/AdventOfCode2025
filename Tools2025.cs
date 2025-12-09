@@ -13,7 +13,9 @@ public class Tools2025 : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = new GameObject("Tools2025").AddComponent<Tools2025>();
+                _instance = FindAnyObjectByType<Tools2025>();
+                if (_instance == null)
+                    _instance = new GameObject("Tools2025").AddComponent<Tools2025>();
             }
             return _instance;
         }
