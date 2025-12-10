@@ -201,12 +201,12 @@ public class Day_2025_10 : DayScript2025
         double result = 0;
         foreach (Machine mac in machines)
         {
-            Debug.LogWarning("Trying to reach state " + System.String.Join(',', mac.goalState));
-            double res = recMatchStateP2(mac.joltage, mac.switches);
+            Debug.LogWarning("Trying to reach state " + System.String.Join(',', mac.goalState) + " with switches " + System.String.Join('|', mac.switches));
+            double res = recMatchStateP2(mac.joltage, mac.switches, 0);
             Debug.LogWarning("Used " + res.ToString() + " switches to reach goal");
             result += res;
 
-            if (IsDebug && result > 20)
+            if (IsDebug && result > 10)
                 break;
         }
 
@@ -214,21 +214,31 @@ public class Day_2025_10 : DayScript2025
         return result.ToString();
     }
 
-    double recMatchStateP2(List<int> currentState, List<Switch> remainingSwitches)
+    double recMatchStateP2(List<int> currentState, List<Switch> remainingSwitches, int index)
     {
-        //if (IsDebug)
-        //    Debug.Log(new string('*', used.Count) + " [" + System.String.Join(' ', currentState) + "] with used : " + System.String.Join('+', used.Select(x => x.ToString())) + "\t | Remains " + remainingSwitches.Count);
+        if (IsDebug)
+            Debug.Log(new string('*', index) + " [" + System.String.Join(' ', currentState) + "] \t\t | Remains " + remainingSwitches.Count);
 
         bool isOK = true;
         for (int i = 0; i < currentState.Count; i++)
         {
             if (currentState[i] < 0)
+            {
+                if (IsDebug)
+                    Debug.Log(new string('>', index) + " OUTAGE");
+             
                 return 10000;  // Too much jolt
+            }
 
             isOK &= currentState[i] == 0;
         }
         if (isOK)
+        {
+            if (IsDebug)
+                Debug.Log(new string('>', index) + " OUTAGE");
+
             return 0;   // All at 0, perfect number of press
+        }
 
 
         
@@ -243,36 +253,54 @@ public class Day_2025_10 : DayScript2025
         
         if (availableSwitches.Count == 0)
         {
-            //if (IsDebug)
-            //    Debug.Log(new string('>', used.Count) + " No remaining switches, dead end");
+            if (IsDebug)
+                Debug.Log(new string('>', index) + " No remaining switches, dead end");
 
             return 10000;
         }
 
 
         double res = 100000;
-        List<int> headButtons = remainingSwitches[0].buttons;
+        Switch headButtons = remainingSwitches[0];
         List<Switch> tailSwitches = new List<Switch>(availableSwitches);
         tailSwitches.RemoveAt(0);
 
-        List<int> withHeadState = new List<int>(currentState);
-        foreach (int b in headButtons)
+        int uniqueButtonIndex = -1;
+        foreach (int b in headButtons.buttons)
         {
-            withHeadState[b]--;
+            if (!tailSwitches.Any(x => x.buttons.Contains(b)))
+            {
+                uniqueButtonIndex = b;
+                break;
+            }
         }
 
-        //List<Switch> withHeadUsed = new List<Switch>(used);
-        //withHeadUsed.Add(remainingSwitches[0]);
+        int cnt = 1;
+        if (uniqueButtonIndex >= 0)
+        {
+            // Must push this one several times because one index doesn't appear in other switches
+            if (IsDebug)
+                Debug.Log(new string('*', index) + " Found index with no more buttons " + uniqueButtonIndex.ToString() + " -- Push it max times!");
 
+            cnt = currentState[uniqueButtonIndex];
+        }
 
-        double resWithHead = recMatchStateP2(withHeadState, tailSwitches);
+        Debug.Log(new string('*', index) + "Try push switch " + headButtons.ToString() + " " + cnt + " times");
+
+        List<int> withHeadState = new List<int>(currentState);
+        foreach (int b in headButtons.buttons)
+        {
+            withHeadState[b] -= cnt;
+        }
+
+        double resWithHead = recMatchStateP2(withHeadState, cnt > 1 ? tailSwitches : availableSwitches, index + 1);
         //if (IsDebug)
         //    Debug.Log(new string('$', withHeadUsed.Count) + " Res WITHHH Head is currently " + resWithHead.ToString() + " " + System.String.Join('+', withHeadUsed.Select(x => x.ToString())));
 
         double resWithoutHead = 10000;
-        if (resWithHead > 1)
+        if (resWithHead > 1 && cnt == 1)
         {
-            resWithoutHead = recMatchStateP2(currentState, tailSwitches);
+            resWithoutHead = recMatchStateP2(currentState, tailSwitches, index + 1);
             //if (IsDebug)
             //    Debug.Log(new string('$', used.Count) + " Res WITHOUT Head is currently " + resWithoutHead.ToString() + " " + System.String.Join('+', used.Select(x => x.ToString())));
         }
