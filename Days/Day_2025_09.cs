@@ -60,7 +60,7 @@ public class Day_2025_09 : DayScript2025
             for (int j = i + 1; j < redTiles.Count; j++)
             {
                 // Hack because all tiles are forming a beautiful convex circle except the couple of bastard 248 & 249
-                if (i > 30 && j >= 249) 
+                if (i > 30 && i < 248 && j >= 249) 
                     continue;
 
 
